@@ -58,7 +58,8 @@ def init(ctx, debug):
     """
     First-Time initializer
     """
-    ctx.obj.deploy.initialize()
+    for appname in ctx.obj.deploy.apps:
+        ctx.obj.deploy.apps[appname].initialize()
 
 
 @main.command('cleanup')
