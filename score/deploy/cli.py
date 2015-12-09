@@ -84,7 +84,7 @@ def status(ctx):
     for name in ctx.obj.deploy.apps:
         app = ctx.obj.deploy.apps[name]
         print(name)
-        for zergling in app.zerglings():
+        for zergling in sorted(app.zerglings(), key=lambda z: z.name):
             status = []
             folder = os.path.join(app.folder, zergling.name)
             proc = Popen(['hg', 'status',
@@ -136,17 +136,17 @@ def update(ctx, alias, force):
 
 
 @main.command('start')
-@click.option('-s', '--single-mode', is_flag=True, default=False)
+@click.option('-m', '--multi-mode', is_flag=True, default=False)
 @click.argument('alias')
 @click.pass_context
-def start(ctx, alias, single_mode):
+def start(ctx, alias, multi_mode):
     """
     Starts a dormant appling
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
     appling = app.appling(lingname)
-    appling.start(deactivate_others=not single_mode)
+    appling.start(deactivate_others=not multi_mode)
 
 
 @main.command('reload')
