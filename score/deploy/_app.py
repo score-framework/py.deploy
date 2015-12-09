@@ -33,7 +33,7 @@ import shutil
 import sys
 import time
 import venv
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 
 log = logging.getLogger(__name__)
@@ -157,17 +157,15 @@ class AppLing:
         log.info('Updating %s' % self)
         stdout = sys.stdout
         proc = Popen(['hg', 'pull'],
-                     cwd=self.folder, stdout=stdout, stderr=PIPE)
-        _, err = proc.communicate()
+                     cwd=self.folder, stdout=stdout, stderr=sys.stderr)
+        out, err = proc.communicate()
         if proc.returncode:
-            raise Exception('Error pulling %s:\n%s' %
-                            (self, str(err, 'UTF-8')))
+            raise Exception('Error pulling %s' % self)
         proc = Popen(['hg', 'update', '--clean'],
-                     cwd=self.folder, stdout=stdout, stderr=PIPE)
-        _, err = proc.communicate()
+                     cwd=self.folder, stdout=stdout, stderr=sys.stderr)
+        out, err = proc.communicate()
         if proc.returncode:
-            raise Exception('Error updating %s:\n%s' %
-                            (self, str(err, 'UTF-8')))
+            raise Exception('Error updating %s' % self)
 
     def start(self, *, deactivate_others=False):
         log.info('Starting %s' % self)
@@ -192,27 +190,29 @@ class AppLing:
         return '<AppLing %s/%s>' % (self.app.name, self.name)
 
     def initialize(self):
-        deploy = self.app.conf
-        self._zergling = deploy.uwsgi.Zergling(
+        uwsgi = self.app.conf.uwsgi
+        self._zergling = uwsgi.Zergling(
             self.app.overlord, self.name,
             os.path.join(self.folder, self.app.paste_ini))
         self._init_folder()
         self._init_venv()
         logpath = os.path.join(self.folder, 'zergling.log')
-        os.unlink(logpath)
+        try:
+            os.unlink(logpath)
+        except OSError:
+            pass
         os.symlink(self.zergling.logfile, logpath)
 
     def _init_venv(self):
         venvpath = os.path.join(self.folder, '.venv')
         if not os.path.exists(venvpath):
-            venv.create(venvpath)
-        proc = Popen([os.path.join('.venv', 'bin', 'python'),
-                      'setup.py', 'install'],
-                     cwd=self.folder, stdout=sys.stdout, stderr=PIPE)
-        _, err = proc.communicate()
+            venv.create(venvpath, with_pip=True)
+        proc = Popen('source .venv/bin/activate && pip install -e .',
+                     shell=True, cwd=self.folder,
+                     stdout=sys.stdout, stderr=sys.stderr)
+        out, err = proc.communicate()
         if proc.returncode:
-            raise Exception('Error installing %s:\n%s' %
-                            (self, str(err, 'UTF-8')))
+            raise Exception('Error installing %s' % self)
         self.zergling.regenini(virtualenv=venvpath)
 
     def _init_folder(self):
@@ -224,7 +224,7 @@ class AppLing:
                 continue
             os.rename(folder, self.folder)
             proc = Popen(hg_reset, shell=True, cwd=self.folder,
-                         stdout=sys.stdout, stderr=PIPE)
+                         stdout=sys.stdout, stderr=sys.stderr)
             out, err = proc.communicate()
             if proc.returncode:
                 log.warn('Error cleaning up folder %s. Deleting.' %
@@ -236,9 +236,8 @@ class AppLing:
         return False
 
     def _clone(self):
-        proc = Popen(['hg', 'clone', self.repository, self.name],
-                     cwd=self.folder, stdout=sys.stdout, stderr=PIPE)
-        _, err = proc.communicate()
+        proc = Popen(['hg', 'clone', self.app.repository, self.name],
+                     cwd=self.app.folder, stdout=sys.stdout, stderr=sys.stderr)
+        out, err = proc.communicate()
         if proc.returncode:
-            log.error(err)
-            raise Exception('Error cloning %s:\n%s' % (self, err))
+            raise Exception('Error cloning %s' % self)
