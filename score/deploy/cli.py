@@ -149,6 +149,16 @@ def start(ctx, alias, multi_mode):
     appling.start(deactivate_others=not multi_mode)
 
 
+@main.command('stop')
+@click.argument('alias')
+@click.pass_context
+def stop(ctx, alias):
+    appname, lingname = parse_alias(alias)
+    app = ctx.obj.deploy.apps[appname]
+    appling = app.appling(lingname)
+    appling.stop()
+
+
 @main.command('reload')
 @click.argument('alias')
 @click.pass_context

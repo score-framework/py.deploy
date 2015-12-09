@@ -188,6 +188,13 @@ class AppLing:
             except NotRunning:
                 pass
 
+    def stop(self):
+        log.info('Stopping %s' % self)
+        try:
+            self.zergling.stop()
+        except NotRunning:
+            pass
+
     def __str__(self):
         return '<AppLing %s/%s>' % (self.app.name, self.name)
 
