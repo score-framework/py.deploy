@@ -32,8 +32,7 @@ import logging
 import shutil
 import sys
 import time
-import venv
-from subprocess import Popen
+from subprocess import Popen, check_call
 
 
 log = logging.getLogger(__name__)
@@ -156,7 +155,7 @@ class AppLing:
     def update(self):
         log.info('Updating %s' % self)
         stdout = sys.stdout
-        proc = Popen(['hg', 'pull'],
+        proc = Popen(['hg', 'pull', self.app.repository],
                      cwd=self.folder, stdout=stdout, stderr=sys.stderr)
         out, err = proc.communicate()
         if proc.returncode:
@@ -167,12 +166,15 @@ class AppLing:
         if proc.returncode:
             raise Exception('Error updating %s' % self)
 
-    def start(self, *, deactivate_others=False):
+    def start(self, *, pause_others=False):
         log.info('Starting %s' % self)
-        venvpath = os.path.join(self.folder, '.venv')
-        self.zergling.regenini(virtualenv=venvpath)
-        self.zergling.start(quiet=True)
-        if not deactivate_others:
+        try:
+            self.zergling.resume()
+        except NotRunning:
+            venvpath = os.path.join(self.folder, '.venv')
+            self.zergling.regenini(virtualenv=venvpath)
+            self.zergling.start(quiet=True)
+        if not pause_others:
             return
         while self.zergling.is_starting():
             time.sleep(0.1)
@@ -182,7 +184,7 @@ class AppLing:
             if zergling.name == self.name:
                 continue
             try:
-                zergling.stop()
+                zergling.pause()
             except NotRunning:
                 pass
 
@@ -206,10 +208,15 @@ class AppLing:
     def _init_venv(self):
         venvpath = os.path.join(self.folder, '.venv')
         if not os.path.exists(venvpath):
-            venv.create(venvpath, with_pip=True)
-        proc = Popen('source .venv/bin/activate && pip install -e .',
-                     shell=True, cwd=self.folder,
-                     stdout=sys.stdout, stderr=sys.stderr)
+            # the next line used to read "venv.create(with_pip=True)", but that
+            # not installing pip on our debian server.
+            check_call(
+                "/bin/bash -c 'virtualenv --python=$(which python3) .venv'",
+                shell=True, cwd=self.folder,
+                stdout=sys.stdout, stderr=sys.stderr)
+        proc = Popen(
+            "/bin/bash -c 'source .venv/bin/activate && python setup.py develop'",
+            shell=True, cwd=self.folder, stdout=sys.stdout, stderr=sys.stderr)
         out, err = proc.communicate()
         if proc.returncode:
             raise Exception('Error installing %s' % self)
