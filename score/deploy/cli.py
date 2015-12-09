@@ -108,6 +108,9 @@ def status(ctx):
 @click.argument('app')
 @click.pass_context
 def mkling(ctx, app):
+    """
+    Creates a new appling
+    """
     app = ctx.obj.deploy.apps[app]
     app.mkling()
 
@@ -118,7 +121,7 @@ def mkling(ctx, app):
 @click.pass_context
 def update(ctx, alias, force):
     """
-    Updates and restarts a zergling
+    Updates and an appling's repository
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
@@ -137,7 +140,7 @@ def update(ctx, alias, force):
 @click.pass_context
 def start(ctx, alias, single_mode):
     """
-    Activates a dormant zergling
+    Starts a dormant appling
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
@@ -150,7 +153,7 @@ def start(ctx, alias, single_mode):
 @click.pass_context
 def reload(ctx, alias):
     """
-    Reloads a zergling
+    Reloads an appling
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
@@ -168,7 +171,7 @@ def reload(ctx, alias):
 @click.pass_context
 def log(ctx, alias):
     """
-    Prints log of zergling
+    Prints log file of appling
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
