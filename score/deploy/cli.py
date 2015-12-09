@@ -113,17 +113,22 @@ def mkling(ctx, app):
 
 
 @main.command('update')
+@click.option('-f', '--force', is_flag=True, default=False)
 @click.argument('alias')
 @click.pass_context
-def update(ctx, alias):
+def update(ctx, alias, force):
     """
     Updates and restarts a zergling
     """
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
     appling = app.appling(lingname)
+    if not force and appling.zergling.is_running():
+        raise click.ClickException(
+            'Zergling running, pass --force to update anyway.')
     appling.update()
-    appling.reload()
+    if appling.zergling.is_running():
+        appling.reload()
 
 
 @main.command('start')
@@ -155,7 +160,7 @@ def reload(ctx, alias):
     while zergling.is_starting():
         time.sleep(0.1)
     if not zergling.is_running():
-        raise Exception('Instance did not start')
+        raise click.ClickException('Instance did not start.')
 
 
 @main.command('log')
