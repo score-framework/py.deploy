@@ -146,7 +146,7 @@ def start(ctx, alias, multi_mode):
     appname, lingname = parse_alias(alias)
     app = ctx.obj.deploy.apps[appname]
     appling = app.appling(lingname)
-    appling.start(deactivate_others=not multi_mode)
+    appling.start(pause_others=not multi_mode)
 
 
 @main.command('stop')
