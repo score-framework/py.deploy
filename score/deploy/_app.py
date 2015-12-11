@@ -25,7 +25,7 @@
 # Licensee has his registered seat, an establishment or assets.
 
 
-from score.uwsgi import NotRunning
+from score.uwsgi import NotRunning, AlreadyPaused
 import random
 import os
 import logging
@@ -174,10 +174,10 @@ class AppLing:
             venvpath = os.path.join(self.folder, '.venv')
             self.zergling.regenini(virtualenv=venvpath)
             self.zergling.start(quiet=True)
-        if not pause_others:
-            return
         while self.zergling.is_starting():
             time.sleep(0.1)
+        if not pause_others:
+            return
         if not self.zergling.is_running():
             raise Exception('Instance did not start')
         for zergling in self.app.zerglings():
@@ -185,7 +185,7 @@ class AppLing:
                 continue
             try:
                 zergling.pause()
-            except NotRunning:
+            except (NotRunning, AlreadyPaused):
                 pass
 
     def stop(self):
