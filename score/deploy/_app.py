@@ -38,18 +38,58 @@ from subprocess import Popen, check_call
 log = logging.getLogger(__name__)
 
 
+phonetics = {
+    "a": "alfa",
+    "b": "bravo",
+    "c": "charlie",
+    "d": "delta",
+    "e": "echo",
+    "f": "foxtrot",
+    "g": "golf",
+    "h": "hotel",
+    "i": "india",
+    "j": "juliett",
+    "k": "kilo",
+    "l": "lima",
+    "m": "mike",
+    "n": "november",
+    "o": "oscar",
+    "p": "papa",
+    "q": "quebec",
+    "r": "romeo",
+    "s": "sierra",
+    "t": "tango",
+    "u": "uniform",
+    "v": "victor",
+    "w": "whiskey",
+    "x": "xray",
+    "y": "yankee",
+    "z": "zulu",
+    "0": "zero",
+    "1": "wun",
+    "2": "too",
+    "3": "tree",
+    "4": "fower",
+    "5": "five",
+    "6": "six",
+    "7": "seven",
+    "8": "ait",
+    "9": "niner",
+}
+
+
 def mkname():
-    words = ["alfa", "bravo", "charlie", "delta", "echo", "foxtrot", "golf",
-             "hotel", "india", "juliett", "kilo", "lima", "mike", "november",
-             "oscar", "papa", "quebec", "romeo", "sierra", "tango", "uniform",
-             "victor", "whiskey", "xray", "yankee", "zulu", "zero", "wun",
-             "too", "tree", "fower", "five", "six", "seven", "ait", "niner"]
+    words = list(phonetics.values())
     return '%s-%s' % (random.choice(words), random.choice(words))
 
 
 hg_reset = 'hg st --no-status --unknown --print0 --color false | ' \
            'xargs -0 rm --force && ' \
            'hg up --clean'
+
+
+class NoSuchAppling(Exception):
+    pass
 
 
 class App:
@@ -80,6 +120,10 @@ class App:
         return self.overlord.zergling(name)
 
     def appling(self, name):
+        try:
+            self.zergling(name)
+        except NoSuchAppling:
+            raise KeyError(name)
         return AppLing(self, name)
 
     def initialize(self):

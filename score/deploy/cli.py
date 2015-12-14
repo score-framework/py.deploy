@@ -35,10 +35,33 @@ from score.uwsgi.cli import zergling_status
 import time
 
 import score.deploy
+from ._app import NoSuchAppling, phonetics
 
 
-def parse_alias(alias):
-    return alias.split('/')
+def appling_name(app_alias):
+    if len(app_alias) > 2:
+        return app_alias
+    return '%s-%s' % (phonetics[app_alias[0]], phonetics[app_alias[1]])
+
+
+def get_appling(ctx, alias):
+    parts = alias.split('/')
+    if len(parts) == 2:
+        app = ctx.deploy.apps[parts[0]]
+        return app.appling(appling_name(parts[1]))
+    found = []
+    for app in ctx.deploy.apps:
+        try:
+            appling = ctx.deploy.apps[app].appling(appling_name(parts[0]))
+            found.append(appling)
+        except NoSuchAppling:
+            pass
+    if not found:
+        raise click.ClickException('Appling %s not found' % appling)
+    if len(found) > 2:
+        raise click.ClickException('Multiple applings with alias %s found:\n  -'
+                                   % (alias, '\n  -'.join(found)))
+    return found[0]
 
 
 @click.group()
@@ -124,9 +147,7 @@ def update(ctx, alias, force):
     """
     Updates and an appling's repository
     """
-    appname, lingname = parse_alias(alias)
-    app = ctx.obj.deploy.apps[appname]
-    appling = app.appling(lingname)
+    appling = get_appling(ctx.obj, alias)
     if not force and appling.zergling.is_running():
         raise click.ClickException(
             'Zergling running, pass --force to update anyway.')
@@ -143,19 +164,29 @@ def start(ctx, alias, multi_mode):
     """
     Starts a dormant appling
     """
-    appname, lingname = parse_alias(alias)
-    app = ctx.obj.deploy.apps[appname]
-    appling = app.appling(lingname)
+    appling = get_appling(ctx.obj, alias)
     appling.start(pause_others=not multi_mode)
+
+
+@main.command('pause')
+@click.argument('alias')
+@click.pass_context
+def pause(ctx, alias):
+    """
+    Pauses a running appling
+    """
+    appling = get_appling(ctx.obj, alias)
+    try:
+        appling.zergling.pause()
+    except score.uwsgi.AlreadyPaused:
+        pass
 
 
 @main.command('stop')
 @click.argument('alias')
 @click.pass_context
 def stop(ctx, alias):
-    appname, lingname = parse_alias(alias)
-    app = ctx.obj.deploy.apps[appname]
-    appling = app.appling(lingname)
+    appling = get_appling(ctx.obj, alias)
     appling.stop()
 
 
@@ -166,9 +197,7 @@ def reload(ctx, alias):
     """
     Reloads an appling
     """
-    appname, lingname = parse_alias(alias)
-    app = ctx.obj.deploy.apps[appname]
-    appling = app.appling(lingname)
+    appling = get_appling(ctx.obj, alias)
     zergling = appling.zergling
     zergling.reload()
     while zergling.is_starting():
@@ -184,9 +213,8 @@ def log(ctx, alias):
     """
     Prints log file of appling
     """
-    appname, lingname = parse_alias(alias)
-    app = ctx.obj.deploy.apps[appname]
-    with open(app.zergling(lingname).logfile) as file:
+    appling = get_appling(ctx.obj, alias)
+    with open(appling.zergling.logfile) as file:
         chunk = file.read(1024)
         while chunk:
             print(chunk)
