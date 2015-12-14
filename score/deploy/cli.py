@@ -85,19 +85,6 @@ def init(ctx, debug):
         ctx.obj.deploy.apps[appname].initialize()
 
 
-@main.command('cleanup')
-@click.argument('app', required=False)
-@click.pass_context
-def cleanup(ctx, app=None):
-    if app:
-        app = ctx.obj.deploy.apps[app]
-        app.cleanup()
-        return
-    for app in ctx.obj.deploy.apps:
-        app = ctx.obj.deploy.apps[app]
-        app.cleanup()
-
-
 @main.command('status')
 @click.pass_context
 def status(ctx):
