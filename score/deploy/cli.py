@@ -122,8 +122,11 @@ def mkling(ctx, app):
     """
     Creates a new appling
     """
+    name = None
+    if '/' in app:
+        app, name = app.split('/', 1)
     app = ctx.obj.deploy.apps[app]
-    app.mkling()
+    app.mkling(name=name)
 
 
 @main.command('update')
