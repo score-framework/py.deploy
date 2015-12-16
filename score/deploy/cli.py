@@ -143,7 +143,7 @@ def update(ctx, alias, force):
             'Zergling running, pass --force to update anyway.')
     appling.update()
     if appling.zergling.is_running():
-        appling.reload()
+        appling.zergling.reload()
 
 
 @main.command('start')
