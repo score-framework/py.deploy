@@ -222,7 +222,10 @@ class AppLing:
             time.sleep(0.1)
         if not pause_others:
             return
-        time.sleep(0.1)
+        for i in range(3):
+            if self.zergling.is_running():
+                break
+            time.sleep(0.1)
         if not self.zergling.is_running():
             raise Exception('Instance did not start')
         for zergling in self.app.zerglings():
