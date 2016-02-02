@@ -42,7 +42,7 @@ setup(
     author_email='score@strg.at',
     url='http://score-framework.org',
     keywords='score framework deployment web shell wsgi uwsgi',
-    packages=['score.deploy'],
+    packages=['score', 'score.deploy'],
     namespace_packages=['score'],
     zip_safe=False,
     license='LGPL',
