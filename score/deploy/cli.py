@@ -91,7 +91,7 @@ def status(ctx):
     """
     Status info on deployment
     """
-    for name in ctx.obj.deploy.apps:
+    for name in sorted(ctx.obj.deploy.apps):
         app = ctx.obj.deploy.apps[name]
         print(name)
         for zergling in sorted(app.zerglings(), key=lambda z: z.name):
