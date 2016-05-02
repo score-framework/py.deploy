@@ -34,7 +34,7 @@ defaults = {
 }
 
 
-def init(confdict, uwsgi_conf):
+def init(confdict, uwsgi):
     conf = defaults.copy()
     conf.update(confdict)
     if 'rootdir' not in conf:
@@ -53,7 +53,7 @@ def init(confdict, uwsgi_conf):
             raise ConfigurationError(__package__,
                                      'No ini path provided for ' + name)
         apps[name] = App(name, conf[key], conf[inikey])
-    return ConfiguredDeployModule(uwsgi_conf, conf['rootdir'], apps)
+    return ConfiguredDeployModule(uwsgi, conf['rootdir'], apps)
 
 
 class ConfiguredDeployModule(ConfiguredModule):
